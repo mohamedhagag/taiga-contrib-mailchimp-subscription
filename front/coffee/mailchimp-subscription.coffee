@@ -55,7 +55,8 @@ decorator = [
     '$tgLocation',
     '$tgNavUrls',
     'lightboxService',
-    ($delegate, $repo, $auth, $location, $navUrls, lightboxService) ->
+    '$tgLoading'
+    ($delegate, $repo, $auth, $location, $navUrls, lightboxService, $loading) ->
         directive = $delegate[0]
 
         directive.template = template
@@ -70,6 +71,10 @@ decorator = [
                     $el.off()
 
                 submit = ->
+                    currentLoading = $loading()
+                        .target(submitButton)
+                        .start()
+
                     unsuscribe = $el.find("input[name='unsuscribe']").is(':checked')
                     params = {}
 
@@ -79,11 +84,13 @@ decorator = [
                     promise = $repo.remove($scope.user, params)
 
                     promise.then (data) ->
+                        currentLoading.finish()
                         lightboxService.close($el)
                         $auth.logout()
                         $location.path($navUrls.resolve("login"))
 
                     promise.then null, ->
+                        currentLoading.finish()
                         console.log "FAIL"
 
                 $el.on "click", ".button-green", (event) ->
@@ -93,6 +100,8 @@ decorator = [
                 $el.on "click", ".button-red", window.taiga.debounce 2000, (event) ->
                     event.preventDefault()
                     submit()
+
+                submitButton = $el.find(".button-red")
 
         return $delegate
 ]
